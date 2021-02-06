@@ -59,7 +59,9 @@ for e in config.configuration["emoji"]:
     elif "nein" in e:
         NEIN=e
 
-client = commands.Bot(command_prefix="-")
+intents = discord.Intents.default()
+intents.members = True
+client = commands.Bot(command_prefix="-", intents=intents)
 client.remove_command(name='help')
 
 running_games = {}
