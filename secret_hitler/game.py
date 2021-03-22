@@ -348,17 +348,17 @@ class Game:
 
         img_new.save("secret_hitler/img/chancellor_"+str(self.game_id)+".png")
 
-    def discard_policy(self, player_id, policy):
-        policy = policy.upper()
+    def discard_policy(self, player_id, card):
+        card = card.upper()
         if (self.state is GameStates.LEGISLATIVE_PRESIDENT and self.president.player_id is player_id) or (self.state is GameStates.LEGISLATIVE_CHANCELLOR and self.chancellor.player_id is player_id):
-            if policy == 'F' or policy == 'L':
+            if card == 'F' or card == 'L':
                 for i in range(len(self.policies)):
-                    print(i)
-                    if self.policies[i] == policy:
+                    if self.policies[i] == card:
                         popped =  self.policies[i]
                         self.policies.pop(i)
                         self.discard.append(popped)
                         if len(self.policies) == 1:
+                            policy = self.policies[0]
                             self.place_policy(self.policies[0])
                             if self.state == GameStates.GAME_OVER:
                                 return True
