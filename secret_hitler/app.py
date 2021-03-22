@@ -364,7 +364,7 @@ async def nominate(ctx, player : commands.MemberConverter):
         return
 
     if not game.nominate(player.id):
-        await ctx.send("This player could not be nominated. He was chancellor or president in the last round")
+        await ctx.send("This player could not be nominated. They were chancellor or president in the last round")
         return
 
     await ctx.message.delete()
