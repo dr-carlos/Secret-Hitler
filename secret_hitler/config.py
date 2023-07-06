@@ -115,13 +115,5 @@ configuration = {
         "secret_hitler_fascist_policy": "secret_hitler/img/policy_fascist.png",
     },
     # category name
-    "category": "Secret Hitler",
-    # channel names
-    "channels": [
-        "logs",
-        "rules",
-        "help",
-        "license",
-        "lobby"
-    ]
+    "category": "Secret Hitler"
 }
