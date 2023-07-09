@@ -93,6 +93,9 @@ async def on_reaction_add(reaction, user):
         return
 
     if game.state == GameStates.ELECTION:
+        if not reaction.is_custom_emoji():
+            return
+
         emoji = reaction.emoji
         vote = False
         if JA in emoji.name:
@@ -108,7 +111,7 @@ async def on_reaction_add(reaction, user):
             if game.calculate_votes():
                 # Start Legislative Session
                 embed = discord.Embed(title="New Chancellor", description=client.get_user(game.chancellor.player_id).display_name + " is the new chancellor. Legislative Session starts now", color=discord.Color.dark_red())
-                embed.set_thumbnail(url=client.get_user(game.chancellor.player_id).avatar_url)
+                embed.set_thumbnail(url=client.get_user(game.chancellor.player_id).display_avatar.url)
                 await client.get_channel(game.channel_id).send(embed=embed)
                 await start_president_legislative(game)
                 return
@@ -371,7 +374,7 @@ async def nominate(ctx, player : commands.MemberConverter):
 
     await ctx.message.delete()
     embed = discord.Embed(title='Player '+player.display_name+' was nominated for chancellor', description="Please react to this message with Ja or Nein to vote", color=discord.Color.dark_red())
-    embed.set_thumbnail(url=player.avatar_url)
+    embed.set_thumbnail(url=player.display_avatar.url)
     msg = await client.get_channel(game.channel_id).send(embed=embed)
     await msg.add_reaction(discord.utils.get(ctx.guild.emojis, name=JA))
     await msg.add_reaction(discord.utils.get(ctx.guild.emojis, name=NEIN))
@@ -859,8 +862,10 @@ async def sendRoles(game : Game):
     file = discord.File("secret_hitler/img/hitler_role.png", filename="role.png")
     embed = discord.Embed(title="Hitler", description="Hitler is your secret role.",
                           color=discord.Color.dark_red())
-    if len(game.players) <= 6 and len(fascists) > 0:
-        embed.add_field(name="Fascist", value="The fascist is "+client.get_user(fascists[0].player_id).display_name)
+	# We play without this rule
+    #if len(game.players) <= 6 and len(fascists) > 0:
+    #    embed.add_field(name="Fascist", value="The fascist is "+client.get_user(fascists[0].player_id).display_name)
+
     embed.set_image(url="attachment://role.png")
     await client.get_user(hitler.player_id).send(file=file, embed=embed)
 
@@ -908,20 +913,20 @@ async def printLicense(channel):
 async def printHelp(channel):
     embed = discord.Embed(title="Help", description="Overview of the commands for the SecretHitler bot", color=discord.Color.dark_red())
     embed.set_thumbnail(url=client.user.display_avatar.url)
-    embed.add_field(name="-help",value="Displays the help")
-    embed.add_field(name="-rules", value="Shows a short summary of the rules", inline=False)
-    embed.add_field(name="-license", value="Shows information about the license of this bot and SecretHitler", inline=False)
-    embed.add_field(name="-startgame <public/private> <players>", value="Starts a public or private game.", inline=False)
-    embed.add_field(name="-stopgame <id>", value="Stops the game with the given id", inline=False)
-    embed.add_field(name="-invite <username>", value="Invites a player to a private game", inline=False)
-    embed.add_field(name="-veto", value="Veto the current agenda", inline=False)
-    embed.add_field(name="-accept", value="Accept the current veto", inline=False)
-    embed.add_field(name="-decline", value="Decline the current veto", inline=False)
-    embed.add_field(name="-restart", value="Restarts a game", inline=False)
-    embed.add_field(name="-investigate <playername>", value="Investigates a players party", inline=False)
-    embed.add_field(name="-discard <l/f>", value="Discards a fascist or a liberal policy", inline=False)
-    embed.add_field(name="-execute <playername>", value="Executes a player", inline=False)
-    embed.add_field(name="-setup", value="Creates a Secret Hitler section in the discord and configures it for running games", inline=False)
+    embed.add_field(name=f"{c_prefix}help",value="Displays the help")
+    embed.add_field(name=f"{c_prefix}rules", value="Shows a short summary of the rules", inline=False)
+    embed.add_field(name=f"{c_prefix}license", value="Shows information about the license of this bot and SecretHitler", inline=False)
+    embed.add_field(name=f"{c_prefix}startgame <public/private> <players>", value="Starts a public or private game.", inline=False)
+    embed.add_field(name=f"{c_prefix}stopgame <id>", value="Stops the game with the given id", inline=False)
+    embed.add_field(name=f"{c_prefix}invite <username>", value="Invites a player to a private game", inline=False)
+    embed.add_field(name=f"{c_prefix}veto", value="Veto the current agenda", inline=False)
+    embed.add_field(name=f"{c_prefix}accept", value="Accept the current veto", inline=False)
+    embed.add_field(name=f"{c_prefix}decline", value="Decline the current veto", inline=False)
+    embed.add_field(name=f"{c_prefix}restart", value="Restarts a game", inline=False)
+    embed.add_field(name=f"{c_prefix}investigate <playername>", value="Investigates a players party", inline=False)
+    embed.add_field(name=f"{c_prefix}discard <l/f>", value="Discards a fascist or a liberal policy", inline=False)
+    embed.add_field(name=f"{c_prefix}execute <playername>", value="Executes a player", inline=False)
+    embed.add_field(name=f"{c_prefix}setup", value="Creates a Secret Hitler section in the discord and configures it for running games", inline=False)
     embed.set_footer(text="Please note that some commands are only available during a special event in a game")
     await channel.send(embed=embed)
 
