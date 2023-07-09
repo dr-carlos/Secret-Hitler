@@ -350,6 +350,9 @@ async def start_game(ctx, players: int):
     admin_role = await ctx.guild.create_role(
         name="game_" + str(game_id) + "_administrator"
     )
+    executed_role = await ctx.guild.create_role(
+        name="game_" + str(game_id) + "_executed"
+    )
     await ctx.message.author.add_roles(role)
     await ctx.message.author.add_roles(admin_role)
 
@@ -371,6 +374,9 @@ async def start_game(ctx, players: int):
     )
     await channel.set_permissions(
         role, overwrite=discord.PermissionOverwrite(read_messages=True)
+    )
+    await channel.set_permissions(
+        executed_role, overwrite=discord.PermissionOverwrite(send_messages=False, read_message_history=False, add_reactions=False)
     )
 
     running_games[game_id] = Game(channel.id, game_id, players, ctx.message.author.id)
@@ -802,7 +808,7 @@ async def decline(ctx):
 
 
 @client.command(name="execute")
-async def execute(ctx, player: commands.UserConverter):
+async def execute(ctx, player: commands.MemberConverter):
     game = get_game_with_player(ctx.message.author.id)
     if not game:
         await ctx.send("You are not in a game")
@@ -827,6 +833,7 @@ async def execute(ctx, player: commands.UserConverter):
 
     fascists = []
     liberal = []
+    executed_member = player
 
     for player in game.players:
         if player.get_party() == "Fascist":
@@ -904,6 +911,12 @@ async def execute(ctx, player: commands.UserConverter):
         )
         embed.set_thumbnail(url=client.get_user(executed.player_id).display_avatar.url)
         await client.get_channel(game.channel_id).send(embed=embed)
+
+        executed_roles = discord.utils.get(
+            ctx.guild.roles, name="game_" + str(game.get_id()) + "_executed"
+        )
+        await executed_member.add_roles(executed_roles)
+
         game.state = GameStates.NOMINATION
         game.set_president()
         await start_nomination(game)
@@ -921,8 +934,13 @@ async def restart(ctx):
         return
 
     channel = client.get_channel(game.channel_id)
-
     await channel.purge(limit=100)
+
+    executed_role = discord.utils.get(
+        ctx.guild.roles, name="game_" + str(game.get_id()) + "_executed"
+    )
+    for executed in executed_role.members:
+        executed.remove_roles(executed_role)
 
     game.restart_game()
 
