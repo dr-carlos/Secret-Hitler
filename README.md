@@ -28,7 +28,7 @@ You will need to create an application and bot on Discord at https://discord.com
 2. Click on the tile for your new application and optionally add an icon and description under the "General Information" section.
 3. Open the "Bot" section and click "Add Bot". For development, disable "Public Bot" so that only you can add your bot to a server. Otherwise, anyone with the bot link can add it to a server.
 4. Check the "Server Members" and "Message Content Intent" in the "Privileged Gateway Intents" section.
-5. To generate a link to invite the bot to a server, go to the OAuth2/URL Generator section and click "Bot" under "Scopes". This opens a "Bot Permissions" panel. Enable "Manage Roles", "Manage Channels", "Manage Expressions", "Send Messages", and "Manage Messages".
+5. To generate a link to invite the bot to a server, go to the OAuth2/URL Generator section and click "Bot" under "Scopes". This opens a "Bot Permissions" panel. Enable "Manage Roles", "Manage Channels", and "Manage Expressions".
 6. Paste the generated link into the browser address bar and go through the bot invitation flow. The bot is now invited to your server.
 
 ### Start SecretHitlerDiscord
