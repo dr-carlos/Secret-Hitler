@@ -143,7 +143,7 @@ class Game:
         self.votes = {}
 
         if yes > no:
-            if self.chancellor is None and self.prev_chancellor_id == -1:
+            if self.chancellor is None or self.prev_chancellor_id == -1:
                 self.prev_chancellor_id = -1
             else:
                 self.prev_chancellor = self.chancellor
