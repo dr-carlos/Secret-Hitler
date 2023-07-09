@@ -373,19 +373,6 @@ async def start_game(ctx, players: int):
         role, overwrite=discord.PermissionOverwrite(read_messages=True)
     )
 
-    voice_channel = await category.create_voice_channel("game_" + str(game_id))
-    await voice_channel.set_permissions(
-        ctx.guild.default_role,
-        overwrite=discord.PermissionOverwrite(view_channel=False),
-    )
-    await voice_channel.set_permissions(
-        ctx.guild.me,
-        overwrite=discord.PermissionOverwrite(manage_channels=True),
-    )
-    await voice_channel.set_permissions(
-        role, overwrite=discord.PermissionOverwrite(view_channel=True)
-    )
-
     running_games[game_id] = Game(channel.id, game_id, players, ctx.message.author.id)
 
     embed = discord.Embed(
@@ -478,9 +465,6 @@ async def stop_game(ctx, id: int):
     channel = client.get_channel(game.channel_id)
     if channel:
         await channel.delete()
-    voice = discord.utils.get(guild.voice_channels, name="game_" + str(id))
-    if voice:
-        await voice.delete()
 
     running_games.pop(id)
     try:
