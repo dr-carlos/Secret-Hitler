@@ -68,6 +68,7 @@ for e in config.configuration["emoji"]:
 intents = discord.Intents.default()
 intents.members = True
 intents.message_content = True
+intents.reactions = True
 
 c_prefix = "/sh "
 client = commands.Bot(command_prefix=c_prefix, intents=intents)
@@ -80,7 +81,7 @@ running_games = {}
 @client.event
 async def on_ready():
     logger.info("We have logged in as {0.user}".format(client))
-    act = discord.Game(name="Secret Hitler")
+    act = discord.Game(name="with Democracy")
     await client.change_presence(status=discord.Status.online, activity=act)
 
 
@@ -94,16 +95,26 @@ async def on_reaction_add(reaction, user):
     if user.id == client.user.id:
         return
 
+    if not reaction.is_custom_emoji():
+        return
+
     game = get_game_with_player(user.id)
     if not game:
-        await reaction.remove(user)
         return
 
     if game.state == GameStates.ELECTION:
-        if not reaction.is_custom_emoji():
-            return
-
         emoji = reaction.emoji
+
+        # If we've currently voted, don't let us vote again
+        if JA in emoji.name or NEIN in emoji.name:
+            for msg_reaction in reaction.message.reactions:
+                if user in [user async for user in msg_reaction.users()]:
+                    if (
+                        JA in msg_reaction.emoji.name or NEIN in msg_reaction.emoji.name
+                    ) and msg_reaction.emoji.name != emoji.name:
+                        await reaction.remove(user)
+                        return
+
         vote = False
         if JA in emoji.name:
             vote = game.vote(user.id, "y")
@@ -232,6 +243,27 @@ async def on_reaction_add(reaction, user):
             await start_nomination(game)
 
 
+@client.event
+async def on_reaction_remove(reaction, user):
+    if user.id == client.user.id:
+        return
+
+    if not reaction.is_custom_emoji():
+        return
+
+    if not (game := get_game_with_player(user.id)):
+        return
+
+    if game.state == GameStates.ELECTION:
+        try:
+            if JA in reaction.emoji.name:
+                game.unvote(user.id, "y")
+            elif NEIN in reaction.emoji.name:
+                game.unvote(user.id, "n")
+        except KeyError:
+            logging.debug(f"Couldn't remove {user.id}'s vote")
+
+
 # Commands
 @client.command(name="setup")
 @commands.has_permissions(administrator=True)
@@ -291,7 +323,7 @@ async def roletest(ctx):
 
 
 @client.command(name="startgame")
-async def start_game(ctx, mode, players: int):
+async def start_game(ctx, players: int):
     category = get_category(ctx.guild)
     if category is None:
         await ctx.send(
@@ -321,24 +353,37 @@ async def start_game(ctx, mode, players: int):
     await ctx.message.author.add_roles(role)
     await ctx.message.author.add_roles(admin_role)
 
-    overwrites = {}
-    channel_overwrites = {}
-    if mode.lower() == "private":
-        channel_overwrites = {
-            ctx.guild.default_role: discord.PermissionOverwrite(view_channel=False),
-            role: discord.PermissionOverwrite(view_channel=True),
-        }
-        overwrites = {
-            ctx.guild.default_role: discord.PermissionOverwrite(read_messages=False),
-            ctx.guild.me: discord.PermissionOverwrite(read_messages=True),
-            role: discord.PermissionOverwrite(read_messages=True),
-        }
-
-    channel = await ctx.guild.create_text_channel(
-        name="game_" + str(game_id), category=category, overwrites=overwrites
+    channel = await category.create_text_channel("game_" + str(game_id))
+    await channel.set_permissions(
+        ctx.guild.default_role,
+        overwrite=discord.PermissionOverwrite(
+            read_messages=False, read_message_history=True
+        ),
     )
-    await ctx.guild.create_voice_channel(
-        name="game_" + str(game_id), category=category, overwrites=channel_overwrites
+    await channel.set_permissions(
+        ctx.guild.me,
+        overwrite=discord.PermissionOverwrite(
+            read_messages=True,
+            manage_channels=True,
+            add_reactions=True,
+            send_messages=True,
+        ),
+    )
+    await channel.set_permissions(
+        role, overwrite=discord.PermissionOverwrite(read_messages=True)
+    )
+
+    voice_channel = await category.create_voice_channel("game_" + str(game_id))
+    await voice_channel.set_permissions(
+        ctx.guild.default_role,
+        overwrite=discord.PermissionOverwrite(view_channel=False),
+    )
+    await voice_channel.set_permissions(
+        ctx.guild.me,
+        overwrite=discord.PermissionOverwrite(manage_channels=True),
+    )
+    await voice_channel.set_permissions(
+        role, overwrite=discord.PermissionOverwrite(view_channel=True)
     )
 
     running_games[game_id] = Game(channel.id, game_id, players, ctx.message.author.id)
@@ -347,23 +392,13 @@ async def start_game(ctx, mode, players: int):
         title="Starting SecretHitler...", description="Waiting for other players"
     )
     embed.add_field(name="Slots", value="1/" + str(players))
-    if mode.lower() == "private":
-        embed.add_field(
-            name="Private Game",
-            value=f"This is a private game. Invite other players by using {c_prefix}invite <playername>. Ensure the player is ready to play and on the server",
-            inline=False,
-        )
-    else:
-        embed.add_field(
-            name="Public Game",
-            value="This is a public game. To join it click on the reaction below!",
-            inline=False,
-        )
+    embed.add_field(
+        name="Private Game",
+        value=f"This is a private game. Invite other players by using {c_prefix}invite <playername>. Ensure the player is ready to play and on the server",
+        inline=False,
+    )
 
     message = await channel.send(embed=embed)
-
-    if mode.lower() == "public":
-        await message.add_reaction(discord.utils.get(ctx.guild.emojis, name=JA))
 
 
 @client.command(name="invite")
@@ -448,7 +483,10 @@ async def stop_game(ctx, id: int):
         await voice.delete()
 
     running_games.pop(id)
-    await ctx.send("The Game with the id: " + str(id) + " has been deleted")
+    try:
+        await ctx.send("The Game with the id: " + str(id) + " has been deleted")
+    except discord.errors.NotFound:
+        logger.debug("The Game with the id: " + str(id) + " has been deleted")
 
 
 @client.command(name="nominate")
@@ -477,13 +515,18 @@ async def nominate(ctx, player: commands.MemberConverter):
         return
 
     await ctx.message.delete()
+
+    next_president_id: int = (
+        0 if game.president_id >= (len(game.players) - 1) else game.president_id + 1
+    )
     embed = discord.Embed(
         title="Player " + player.display_name + " was nominated for chancellor",
-        description="Please react to this message with Ja or Nein to vote.\nVote wisely! "
-        + game.players[game.president_id + 1].display_name
+        description="Please react to this message with Ja or Nein to vote.\nVote wisely - "
+        + client.get_user(game.players[next_president_id].player_id).display_name
         + " will be President next round!",
         color=discord.Color.dark_red(),
     )
+
     embed.set_thumbnail(url=player.display_avatar.url)
     msg = await client.get_channel(game.channel_id).send(embed=embed)
     await msg.add_reaction(discord.utils.get(ctx.guild.emojis, name=JA))
@@ -1211,8 +1254,8 @@ async def printHelp(channel):
         inline=False,
     )
     embed.add_field(
-        name=f"{c_prefix}startgame <public/private> <players>",
-        value="Starts a public or private game.",
+        name=f"{c_prefix}startgame <players>",
+        value="Starts a private game.",
         inline=False,
     )
     embed.add_field(
