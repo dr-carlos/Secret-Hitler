@@ -357,7 +357,7 @@ async def start_game(ctx, players: int):
     await channel.set_permissions(
         ctx.guild.default_role,
         overwrite=discord.PermissionOverwrite(
-            read_messages=False, read_message_history=True
+            read_messages=False, read_message_history=True, send_messages=True
         ),
     )
     await channel.set_permissions(
@@ -366,7 +366,7 @@ async def start_game(ctx, players: int):
             read_messages=True,
             manage_channels=True,
             add_reactions=True,
-            send_messages=True,
+            manage_messages=True
         ),
     )
     await channel.set_permissions(
