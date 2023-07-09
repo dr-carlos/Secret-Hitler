@@ -27,9 +27,9 @@ You will need to create an application and bot on Discord at https://discord.com
 1. Open https://discord.com/developers/applications/ in a browser and click "New Application".
 2. Click on the tile for your new application and optionally add an icon and description under the "General Information" section.
 3. Open the "Bot" section and click "Add Bot". For development, disable "Public Bot" so that only you can add your bot to a server. Otherwise, anyone with the bot link can add it to a server.
-4. Check the "Server Members Intent" in the "Privileged Gateway Intents" section.
-5. To generate a link to invite the bot to a server, go to the OAuth2 section and click "Bot" under "Scopes". This opens a "Bot Permissions" panel. Enable "Administrator" under "Bot Permissions" and copy the URL in the "Scopes" section.
-6. Paste the copied link into the browser address bar and go through the bot invitation flow. The bot is now invited to your server.
+4. Check the "Server Members" and "Message Content Intent" in the "Privileged Gateway Intents" section.
+5. To generate a link to invite the bot to a server, go to the OAuth2/URL Generator section and click "Bot" under "Scopes". This opens a "Bot Permissions" panel. Enable "Manage Roles", "Manage Channels", "Manage Expressions", "Send Messages", and "Manage Messages".
+6. Paste the generated link into the browser address bar and go through the bot invitation flow. The bot is now invited to your server.
 
 ### Start SecretHitlerDiscord
 The application must be running for the Discord bot to be able to respond to commands from users in Discord. 
@@ -53,7 +53,7 @@ python3 main.py
 
 ## Start game
 
-To start a game use -startgame private <number of players>. A new game channel will be created. Execute -invite <playername> to add a player to this game. After all players joined the game will start.
+To start a game use /sh startgame private <number of players>. A new game channel will be created. Execute /sh invite <playername> to add a player to this game. After all players joined the game will start.
 
 ## Discord API Documentation
 https://discordpy.readthedocs.io/en/latest/index.html
