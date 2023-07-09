@@ -166,7 +166,7 @@ async def on_reaction_add(reaction, user):
                 await sendBoard(game)
                 game.failed_votes = 0
                 if game.state == GameStates.NOMINATION:
-                    game.set_presidnet()
+                    game.set_president()
                     game.nominated = None
                     await start_nomination(game)
                     return
